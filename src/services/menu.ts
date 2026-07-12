@@ -47,23 +47,16 @@ export const getMenuItems = async (): Promise<MenuItem[]> => {
   });
 };
 
-let firstSheetNameCache: string | null = null;
-
-const getSheetName = async (accessToken: string): Promise<string> => {
-  if (firstSheetNameCache) return firstSheetNameCache;
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}`, {
-    headers: { Authorization: `Bearer ${accessToken}` }
-  });
-  if (!res.ok) return 'גיליון1'; // fallback
-  const data = await res.json();
-  if (data.sheets && data.sheets.length > 0) {
-    firstSheetNameCache = data.sheets[0].properties.title;
-    return firstSheetNameCache!;
-  }
-  return 'גיליון1';
+export const getAppsScriptUrl = (): string => {
+  return 'https://script.google.com/macros/s/AKfycbwzxUoGnVynxAJgqKIqh1dWzLfQeUapDcJfT_-BdmQT4sHy2H-R8PWHhfzBdV41j2tM/exec';
 };
 
-export const createMenuItem = async (accessToken: string, item: Omit<MenuItem, 'id'>): Promise<number> => {
+export const createMenuItem = async (accessToken: string | null, item: Omit<MenuItem, 'id'>): Promise<number> => {
+  const scriptUrl = getAppsScriptUrl();
+  if (!scriptUrl) {
+    throw new Error('אנא הגדר תחילה את כתובת ה-Apps Script Web App בהגדרות החיבור');
+  }
+
   const rowObj = [
     getCategoryLabel(item.categoryId),
     item.title,
@@ -73,71 +66,92 @@ export const createMenuItem = async (accessToken: string, item: Omit<MenuItem, '
     item.isHidden ? 'TRUE' : 'FALSE'
   ];
   
-  const sheetName = await getSheetName(accessToken);
-  const encodedSheetName = encodeURIComponent(sheetName);
-  
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}!A:F:append?valueInputOption=USER_ENTERED`, {
+  const res = await fetch(scriptUrl, {
     method: 'POST',
+    mode: 'cors',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'text/plain;charset=utf-8' // Crucial: prevents CORS preflight OPTIONS request
     },
-    body: JSON.stringify({ values: [rowObj] })
+    body: JSON.stringify({
+      action: 'create',
+      item: rowObj
+    })
   });
   
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'Failed to create menu item');
+    throw new Error('שגיאה בתקשורת עם Google Apps Script');
   }
   
   const data = await res.json();
-  const range = data.updates?.updatedRange; // e.g. "Sheet1!A7:E7"
-  const match = range?.match(/[A-Z]+(\d+)/);
-  if (match) return parseInt(match[1], 10);
+  if (data.error) {
+    throw new Error(data.error);
+  }
   
-  return Date.now(); // Fallback ID
+  return Number(data.id) || Date.now();
 };
 
-export const updateMenuItem = async (accessToken: string, rowId: number | string, item: Partial<MenuItem>) => {
-  // item should have all fields from the edit form
+export const updateMenuItem = async (accessToken: string | null, rowId: number | string, item: Partial<MenuItem>) => {
+  const scriptUrl = getAppsScriptUrl();
+  if (!scriptUrl) {
+    throw new Error('אנא הגדר תחילה את כתובת ה-Apps Script Web App בהגדרות החיבור');
+  }
+
   const rowObj = [
     item.categoryId ? getCategoryLabel(item.categoryId) : '',
-    item.title,
-    item.description,
+    item.title || '',
+    item.description || '',
     item.price !== undefined ? item.price.toString() : '',
     item.image || '',
     item.isHidden ? 'TRUE' : 'FALSE'
   ];
   
-  const sheetName = await getSheetName(accessToken);
-  const encodedSheetName = encodeURIComponent(sheetName);
-  
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}!A${rowId}:F${rowId}?valueInputOption=USER_ENTERED`, {
-    method: 'PUT',
+  const res = await fetch(scriptUrl, {
+    method: 'POST',
+    mode: 'cors',
     headers: {
-      Authorization: `Bearer ${accessToken}`,
-      'Content-Type': 'application/json'
+      'Content-Type': 'text/plain;charset=utf-8' // Crucial: prevents CORS preflight OPTIONS request
     },
-    body: JSON.stringify({ values: [rowObj] })
+    body: JSON.stringify({
+      action: 'update',
+      id: rowId,
+      item: rowObj
+    })
   });
   
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'Failed to update menu item');
+    throw new Error('שגיאה בתקשורת עם Google Apps Script');
+  }
+  
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error);
   }
 };
 
-export const deleteMenuItem = async (accessToken: string, rowId: number | string) => {
-  const sheetName = await getSheetName(accessToken);
-  const encodedSheetName = encodeURIComponent(sheetName);
+export const deleteMenuItem = async (accessToken: string | null, rowId: number | string) => {
+  const scriptUrl = getAppsScriptUrl();
+  if (!scriptUrl) {
+    throw new Error('אנא הגדר תחילה את כתובת ה-Apps Script Web App בהגדרות החיבור');
+  }
 
-  const res = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodedSheetName}!A${rowId}:F${rowId}:clear`, {
+  const res = await fetch(scriptUrl, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}` }
+    mode: 'cors',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8' // Crucial: prevents CORS preflight OPTIONS request
+    },
+    body: JSON.stringify({
+      action: 'delete',
+      id: rowId
+    })
   });
   
   if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err.error?.message || 'Failed to delete menu item');
+    throw new Error('שגיאה בתקשורת עם Google Apps Script');
+  }
+  
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error);
   }
 };

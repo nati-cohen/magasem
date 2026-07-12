@@ -16,18 +16,16 @@ export function AdminPanel({ menuItems, onItemsChange, onClose }: AdminPanelProp
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState<Partial<MenuItem>>({});
   const [loadingAction, setLoadingAction] = useState(false);
-  const { logout, accessToken, loginWithGoogle } = useAuth();
+  const { logout } = useAuth();
 
   const handleDelete = async (id: number | string) => {
     if (confirm('האם אתה בטוח שברצונך למחוק מנה זו?')) {
       try {
         setLoadingAction(true);
-        if (accessToken) {
-          await deleteMenuItem(accessToken, id);
-        }
+        await deleteMenuItem(null, id);
         onItemsChange(menuItems.filter(item => item.id !== id));
       } catch (e) {
-        alert("אירעה שגיאה במחיקת המנה");
+        alert("אירעה שגיאה במחיקת המנה: " + (e instanceof Error ? e.message : String(e)));
         console.error(e);
       } finally {
         setLoadingAction(false);
@@ -59,11 +57,6 @@ export function AdminPanel({ menuItems, onItemsChange, onClose }: AdminPanelProp
       return;
     }
 
-    if (!accessToken) {
-      alert('יש להתחבר עם גוגל תחילה');
-      return;
-    }
-
     setLoadingAction(true);
     try {
       if (isAdding) {
@@ -75,7 +68,7 @@ export function AdminPanel({ menuItems, onItemsChange, onClose }: AdminPanelProp
           image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
           isHidden: formData.isHidden || false,
         };
-        const newId = await createMenuItem(accessToken, newItemData);
+        const newId = await createMenuItem(null, newItemData);
         onItemsChange([...menuItems, { id: newId, ...newItemData }]);
       } else if (editingItem) {
         const updatedData = {
@@ -86,7 +79,7 @@ export function AdminPanel({ menuItems, onItemsChange, onClose }: AdminPanelProp
           image: formData.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=800&q=80',
           isHidden: formData.isHidden || false,
         };
-        await updateMenuItem(accessToken, editingItem.id, updatedData);
+        await updateMenuItem(null, editingItem.id, updatedData);
         const updatedItems = menuItems.map(item => 
           item.id === editingItem.id ? { ...item, ...updatedData } as MenuItem : item
         );
@@ -131,23 +124,6 @@ export function AdminPanel({ menuItems, onItemsChange, onClose }: AdminPanelProp
             </button>
           </div>
         </div>
-
-        {!accessToken && (
-          <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center shadow-sm">
-            <div>
-              <p className="font-bold text-orange-900 text-lg">נדרש חיבור לגוגל שיטס</p>
-              <p className="text-sm text-orange-800">
-                מטעמי אבטחה, גישת העריכה לגליון הנתונים מתנתקת ברענון הדף. יש לאשרר את החיבור בכדי שתרשאו לערוך ולהוסיף מנות.
-              </p>
-            </div>
-            <button
-              onClick={loginWithGoogle}
-              className="bg-brand-olive text-white px-6 py-3 rounded-lg font-bold hover:bg-brand-olive-light transition-colors whitespace-nowrap shadow"
-            >
-              התחבר מחדש לגוגל
-            </button>
-          </div>
-        )}
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Form Area */}
