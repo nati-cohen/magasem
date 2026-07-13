@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Phone, 
@@ -11,8 +11,6 @@ import {
   ChefHat,
   Leaf,
   Mail,
-  Volume2,
-  VolumeX,
   Settings
 } from 'lucide-react';
 import { MENU_CATEGORIES, INITIAL_MENU_ITEMS } from './data';
@@ -29,9 +27,7 @@ export default function App() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [isPlayingMusic, setIsPlayingMusic] = useState(false);
   const [isAdminView, setIsAdminView] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loadingMenu, setLoadingMenu] = useState(true);
@@ -79,23 +75,6 @@ export default function App() {
     }
   };
 
-  const toggleMusic = async () => {
-    if (audioRef.current) {
-      if (isPlayingMusic) {
-        audioRef.current.pause();
-        setIsPlayingMusic(false);
-      } else {
-        try {
-          await audioRef.current.play();
-          setIsPlayingMusic(true);
-        } catch (error) {
-          console.error("Audio playback failed. Please ensure music.mp3 is uploaded to the public directory.", error);
-          setIsPlayingMusic(false);
-        }
-      }
-    }
-  };
-
   const { user, isAdmin, loading } = useAuth();
 
   if (isAdminView) {
@@ -124,44 +103,49 @@ export default function App() {
     <div className="min-h-screen bg-brand-cream text-brand-charcoal overflow-x-hidden">
       {/* Navbar */}
       <nav 
-        className={`fixed w-full z-50 transition-all duration-300 ${
+        className={`fixed w-full z-50 transition-all duration-500 ${
           isScrolled 
-            ? 'bg-brand-cream/95 backdrop-blur-md shadow-sm py-4' 
+            ? 'bg-brand-cream/95 backdrop-blur-md shadow-sm py-3' 
             : 'bg-transparent py-6'
         }`}
       >
         <div className="max-w-7xl mx-auto px-6 lg:px-12 flex items-center justify-between">
-          <div className="flex-1 flex justify-start">
+          
+          {/* Right Side (RTL) - Logo & Mobile Menu */}
+          <div className="flex justify-start items-center gap-4 w-1/4">
             <button 
               className="lg:hidden text-brand-charcoal"
               onClick={() => setIsMobileMenuOpen(true)}
             >
               <MenuIcon size={28} />
             </button>
-            <div className="hidden lg:flex items-center gap-8 text-[15px] font-medium tracking-wide">
-              <button onClick={() => scrollToSection('home')} className="hover:text-brand-olive transition-colors">בית</button>
-              <button onClick={() => scrollToSection('about')} className="hover:text-brand-olive transition-colors">הסיפור שלנו</button>
-              <button onClick={() => scrollToSection('menu')} className="hover:text-brand-olive transition-colors">תפריט מגשים</button>
-              <button onClick={() => scrollToSection('contact')} className="hover:text-brand-olive transition-colors">יצירת קשר</button>
-            </div>
-          </div>
-          
-          <div className="flex-1 flex justify-center">
             <img 
               src="/logo.jpg" 
               alt="מגשים לוגו" 
-              className={`transition-all duration-300 rounded-full shadow-md object-contain ${
-                isScrolled ? 'h-14 w-14' : 'h-20 w-20'
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className={`transition-all duration-500 rounded-full shadow-md object-contain ${
+                isScrolled ? 'h-12 w-12' : 'h-16 w-16'
               }`} 
             />
           </div>
+
+          {/* Center - Desktop Navigation */}
+          <div className="hidden lg:flex flex-1 items-center justify-center gap-8 text-[15px] font-medium tracking-wide">
+            <button onClick={() => scrollToSection('home')} className="hover:text-brand-olive transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-brand-olive hover:after:w-full after:transition-all">בית</button>
+            <button onClick={() => scrollToSection('about')} className="hover:text-brand-olive transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-brand-olive hover:after:w-full after:transition-all">הסיפור שלנו</button>
+            <button onClick={() => scrollToSection('menu')} className="hover:text-brand-olive transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-brand-olive hover:after:w-full after:transition-all">תפריט מגשים</button>
+            <button onClick={() => scrollToSection('contact')} className="hover:text-brand-olive transition-colors relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 after:h-0.5 after:bg-brand-olive hover:after:w-full after:transition-all">יצירת קשר</button>
+          </div>
           
-          <div className="flex-1 flex justify-end gap-4">
+          {/* Left Side (RTL) - CTA */}
+          <div className="flex justify-end w-1/4">
              <a 
                 href={WHATSAPP_URL}
                 target="_blank"
                 rel="noreferrer"
-                className="hidden lg:flex items-center gap-2 bg-brand-olive hover:bg-brand-olive-light text-brand-cream px-6 py-2.5 rounded-full font-medium transition-colors"
+                className="hidden lg:flex items-center gap-2 bg-brand-olive hover:bg-brand-olive-light text-brand-cream px-6 py-2.5 rounded-full font-medium transition-colors shadow-sm hover:shadow-md hover:-translate-y-0.5 duration-300"
               >
                 להזמנה <MessageCircle size={18} />
               </a>
@@ -183,6 +167,9 @@ export default function App() {
               <img 
                 src="/logo.jpg" 
                 alt="מגשים לוגו" 
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
                 className="h-16 w-16 rounded-full shadow-sm object-contain" 
               />
               <button onClick={() => setIsMobileMenuOpen(false)}>
@@ -190,37 +177,46 @@ export default function App() {
               </button>
             </div>
             <div className="flex flex-col gap-8 p-12 text-2xl font-medium items-start">
-              <button onClick={() => scrollToSection('home')}>בית</button>
-              <button onClick={() => scrollToSection('about')}>הסיפור שלנו</button>
-              <button onClick={() => scrollToSection('menu')}>תפריט מגשים</button>
-              <button onClick={() => scrollToSection('contact')}>יצירת קשר</button>
+              <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} onClick={() => scrollToSection('home')}>בית</motion.button>
+              <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} onClick={() => scrollToSection('about')}>הסיפור שלנו</motion.button>
+              <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} onClick={() => scrollToSection('menu')}>תפריט מגשים</motion.button>
+              <motion.button initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} onClick={() => scrollToSection('contact')}>יצירת קשר</motion.button>
             </div>
             <div className="mt-auto p-12 pb-24">
-               <a 
+               <motion.a 
+                  initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
                   href={WHATSAPP_URL}
                   target="_blank"
                   rel="noreferrer"
                   className="flex justify-center items-center gap-2 w-full bg-brand-olive text-brand-cream py-4 rounded-full font-medium text-lg"
                 >
                   הזמנה מהירה בוואטסאפ <MessageCircle size={20} />
-                </a>
+                </motion.a>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Hero Section */}
-      <section id="home" className="relative h-[90vh] min-h-[600px] flex items-center justify-center pt-20">
-        <div className="absolute inset-0 z-0">
+      <section id="home" className="relative h-[90vh] min-h-[600px] flex items-center justify-center pt-20 overflow-hidden">
+        <motion.div 
+          initial={{ scale: 1.1 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+          className="absolute inset-0 z-0"
+        >
           <img 
             src="https://images.unsplash.com/photo-1555507036-ab1d4075c6f1?auto=format&fit=crop&w=2000&q=80" 
             alt="Table full of beautiful food" 
             className="w-full h-full object-cover"
             referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
           />
           <div className="absolute inset-0 bg-brand-charcoal/40" />
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-charcoal/60 via-transparent to-brand-cream" />
-        </div>
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-charcoal/70 via-brand-charcoal/20 to-brand-cream" />
+        </motion.div>
         
         <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
           <motion.span 
@@ -272,12 +268,13 @@ export default function App() {
       </section>
 
       {/* About & Kosher Section */}
-      <section id="about" className="py-24 px-6 bg-brand-cream relative">
+      <section id="about" className="py-24 px-6 bg-brand-cream relative overflow-hidden">
         <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-16 items-center">
           <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
             className="space-y-8"
           >
             <div className="space-y-2">
@@ -313,9 +310,10 @@ export default function App() {
           </motion.div>
           
           <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
             viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
             className="relative"
           >
             <div className="aspect-[4/5] rounded-t-full overflow-hidden">
@@ -335,44 +333,59 @@ export default function App() {
       </section>
 
       {/* Menu Section */}
-      <section id="menu" className="py-24 bg-white relative">
+      <section id="menu" className="py-24 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center space-y-4 mb-16">
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center space-y-4 mb-16"
+          >
             <span className="text-brand-gold font-medium tracking-widest uppercase">התפריט שלנו</span>
             <h2 className="text-4xl md:text-5xl font-bold text-brand-olive">מגשי אירוח מוקפדים</h2>
             <p className="text-lg text-brand-charcoal/60 max-w-2xl mx-auto">
               בחרו ממגוון המנות העשיר שלנו, המותאמות במיוחד כדי להפוך כל אירוע לחוויה בלתי נשכחת
             </p>
-          </div>
+          </motion.div>
 
           {/* Category Tabs */}
-          <div className="flex overflow-x-auto pb-4 mb-12 gap-2 snap-x hide-scrollbar justify-start md:justify-center">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            className="flex flex-wrap justify-center gap-2 md:gap-3 pb-6 pt-2 mb-10"
+          >
             {MENU_CATEGORIES.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`snap-center shrink-0 px-6 py-3 rounded-full text-sm sm:text-base font-medium transition-all duration-300 ${
+                className={`px-4 py-2 md:px-5 md:py-2.5 rounded-full text-sm md:text-base font-medium transition-all duration-300 ${
                   activeCategory === category.id 
-                    ? 'bg-brand-olive text-brand-cream shadow-md' 
-                    : 'bg-brand-cream text-brand-charcoal/70 hover:bg-brand-cream-dark'
+                    ? 'bg-brand-olive text-brand-cream shadow-md scale-105' 
+                    : 'bg-brand-cream text-brand-charcoal/70 hover:bg-brand-cream-dark hover:scale-105'
                 }`}
               >
                 {category.label}
               </button>
             ))}
-          </div>
+          </motion.div>
 
           {/* Menu Grid */}
           <motion.div layout className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            <AnimatePresence>
-              {filteredMenu.map((item) => (
+            <AnimatePresence mode="popLayout">
+              {filteredMenu.map((item, index) => (
                 <motion.div
                   key={item.id}
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.3 }}
+                  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ 
+                    duration: 0.4, 
+                    ease: "easeOut"
+                  }}
                   className="bg-brand-cream rounded-3xl overflow-hidden group hover:shadow-xl transition-shadow flex flex-col"
                 >
                   <div className="relative h-56 overflow-hidden">
@@ -406,8 +419,14 @@ export default function App() {
       </section>
 
       {/* CTA Banner */}
-      <section className="bg-brand-olive text-brand-cream py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+      <section className="bg-brand-olive text-brand-cream py-20 px-6 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 40 }}
+          whileInView={{ opacity: 1, scale: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="max-w-4xl mx-auto text-center space-y-8"
+        >
           <h2 className="text-3xl md:text-5xl font-bold">מוכנים לאירוע הבא שלכם?</h2>
           <p className="text-lg text-brand-cream-dark opacity-90 max-w-2xl mx-auto leading-relaxed">
             אנחנו כאן כדי לדאוג לכל הפרטים. שלחו לנו הודעה ונבנה יחד תפריט מותאם אישית שיתאים בול עבורכם ועבור האורחים שלכם.
@@ -420,13 +439,19 @@ export default function App() {
             >
               לשיחת ייעוץ והזמנה <MessageCircle size={24} />
           </a>
-        </div>
+        </motion.div>
       </section>
 
       {/* Footer & Contact */}
-      <footer id="contact" className="bg-brand-charcoal text-brand-cream pt-24 pb-12 px-6">
+      <footer id="contact" className="bg-brand-charcoal text-brand-cream pt-24 pb-12 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto grid md:grid-cols-3 gap-16 mb-16">
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
+          >
             <img 
               src="/logo.jpg" 
               alt="מגשים לוגו" 
@@ -443,9 +468,15 @@ export default function App() {
                 <MessageCircle size={20} />
               </a>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+            className="space-y-6"
+          >
             <h3 className="text-xl font-bold border-b border-brand-cream/20 pb-4 inline-block">יצירת קשר</h3>
             <ul className="space-y-4">
               <li>
@@ -469,26 +500,43 @@ export default function App() {
                 <span>כשרות מהדרין רבנות מטה בנימין</span>
               </li>
             </ul>
-          </div>
+          </motion.div>
           
-          <div className="space-y-6">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+            className="space-y-6"
+          >
             <h3 className="text-xl font-bold border-b border-brand-cream/20 pb-4 inline-block">צור קשר כאן</h3>
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const name = formData.get('name');
+              const phone = formData.get('phone');
+              const message = `שלום, אשמח לפרטים לגבי מגשי אירוח.\nשם: ${name}\nטלפון: ${phone}`;
+              window.open(`https://wa.me/972525666182?text=${encodeURIComponent(message)}`, '_blank');
+            }}>
               <input 
                 type="text" 
+                name="name"
+                required
                 placeholder="שם מלא" 
                 className="w-full bg-brand-cream/10 border border-brand-cream/20 rounded-lg px-4 py-3 outline-none focus:border-brand-gold transition-colors placeholder:text-brand-cream/40 text-brand-cream"
               />
               <input 
                 type="tel" 
+                name="phone"
+                required
                 placeholder="מספר טלפון" 
                 className="w-full bg-brand-cream/10 border border-brand-cream/20 rounded-lg px-4 py-3 outline-none focus:border-brand-gold transition-colors placeholder:text-brand-cream/40 text-brand-cream"
               />
-              <button className="w-full bg-brand-gold text-brand-charcoal font-bold py-3 rounded-lg hover:bg-brand-gold-light transition-colors">
-                שלחו פנייה
+              <button type="submit" className="w-full bg-brand-gold text-brand-charcoal font-bold py-3 rounded-lg hover:bg-brand-gold-light transition-colors flex items-center justify-center gap-2">
+                שלחו פנייה <MessageCircle size={18} />
               </button>
             </form>
-          </div>
+          </motion.div>
         </div>
         
         <div className="border-t border-brand-cream/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-brand-cream/40 text-sm">
@@ -515,23 +563,6 @@ export default function App() {
       >
         <MessageCircle size={28} />
       </a>
-
-      {/* Floating Music Toggle */}
-      <button 
-        onClick={toggleMusic}
-        className="fixed bottom-6 left-6 z-[100] w-14 h-14 bg-brand-cream-dark text-brand-olive rounded-full flex justify-center items-center shadow-xl hover:scale-110 transition-transform hover:bg-brand-gold hover:text-brand-charcoal"
-        aria-label="Toggle Background Music"
-        title="מוזיקת רקע"
-      >
-        {isPlayingMusic ? <Volume2 size={24} /> : <VolumeX size={24} />}
-      </button>
-
-      {/* Audio Element */}
-      <audio 
-        ref={audioRef} 
-        src="/music.mp3" 
-        loop
-      />
     </div>
   );
 }
